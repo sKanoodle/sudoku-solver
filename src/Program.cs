@@ -9,6 +9,7 @@ namespace SudokuSolver
     {
         static void Main(string[] args)
         {
+            // https://www.websudoku.com/?level=1&set_id=2217386028
             Sudoku easy = new Sudoku(new[] {
                 0,5,0,  0,0,0,  0,0,0,
                 9,0,7,  0,0,0,  2,0,0,
@@ -23,6 +24,7 @@ namespace SudokuSolver
                 0,0,0,  0,0,0,  0,5,0,
             });
 
+            // https://www.websudoku.com/?level=3&set_id=3240158230
             Sudoku hard = new Sudoku(new[] {
                 0,0,0,  0,0,6,  0,0,5,
                 9,7,0,  1,8,0,  0,0,6,
@@ -37,6 +39,7 @@ namespace SudokuSolver
                 6,0,0,  3,0,0,  0,0,0,
             });
 
+            // https://www.websudoku.com/?level=4&set_id=8255281410
             Sudoku evil = new Sudoku(new[] {
                 0,0,0,  0,0,0,  0,0,0,
                 0,6,0,  0,0,7,  2,5,0,
