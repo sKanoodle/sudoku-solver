@@ -1,0 +1,2 @@
+# sudoku-solver
+solves sudokus
