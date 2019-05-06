@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SudokuSolver
 {
@@ -49,8 +51,8 @@ namespace SudokuSolver
                 0,0,0,  0,0,0,  0,0,0,
             });
 
-            SolveWithMetrics(easy);
-            SolveWithMetrics(hard);
+            //SolveWithMetrics(easy);
+            //SolveWithMetrics(hard);
             SolveWithMetrics(evil);
 
             Console.ReadKey();
@@ -64,10 +66,9 @@ namespace SudokuSolver
             result.Draw();
             Console.WriteLine(watch.Elapsed);
             Console.WriteLine();
-            Console.ReadKey();
         }
 
-        public static Sudoku Solve( Sudoku sudoku )
+        public static Sudoku Solve( Sudoku sudoku, int depth = 0 )
         {
             while (true)
             {
@@ -90,7 +91,7 @@ namespace SudokuSolver
 
                 // now get into recursion with guessing tiles and seeing if the sudoku is then solvable
                 Sudoku result = null;
-                if ((result = Solve2(sudoku)) != null)
+                if ((result = Solve2(sudoku, depth)) != null)
                     return result;
 
                 return null; // not solvable
@@ -116,8 +117,9 @@ namespace SudokuSolver
             return didFindOne ? SolveTryState.FoundAtLeastOne : SolveTryState.NoNewFindings;
         }
 
-        private static Sudoku Solve2(Sudoku sudoku)
+        private static Sudoku Solve2(Sudoku sudoku, int depth)
         {
+            List<Task<Sudoku>> tasks = new List<Task<Sudoku>>();
             var tilesToCheck = sudoku.UnsolvedTiles.ToArray();
             foreach (int tile in tilesToCheck)
             {
@@ -129,11 +131,22 @@ namespace SudokuSolver
                     sudoku2.Tiles[tile] = sudoku2.Tiles[tile].WithValue(value);
                     sudoku2.UnsolvedTiles.Remove(tile);
 
-                    Sudoku result;
-                    if ((result = Solve(sudoku2)) != null)
-                        return result;
+                    if (depth == 0)
+                        tasks.Add(Task.Run(() => Solve(sudoku2, depth + 1)));
+
+                    else
+                    {
+                        Sudoku result;
+                        if ((result = Solve(sudoku2, depth + 1)) != null)
+                            return result;
+                    }
                 }
             }
+            Task.WaitAll(tasks.ToArray());
+            foreach (var task in tasks)
+                if (task.Result != null)
+                    return task.Result;
+
             return null;
         }
 
