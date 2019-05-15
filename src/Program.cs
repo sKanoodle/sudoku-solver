@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -145,11 +145,17 @@ namespace SudokuSolver
                     }
                 }
             }
-            Task.WaitAll(tasks.ToArray());
-            foreach (var task in tasks)
+
+            int i = 0;
+            while (tasks.Count > 0)
+            {
+                int index = Task.WaitAny(tasks.ToArray());
+                Console.WriteLine(i++);
+                var task = tasks[index];
+                tasks.RemoveAt(index);
                 if (task.Result != null)
                     return task.Result;
-
+            }
             return null;
         }
 
