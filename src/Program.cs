@@ -92,9 +92,13 @@ namespace SudokuSolver
                     default: throw new NotImplementedException();
                 }
 
+                // look for tiles with same possibles, that eliminates thos from other tiles
+                if (sudoku.Solve2())
+                    continue;
+
                 // now get into recursion with guessing tiles and seeing if the sudoku is then solvable
                 Sudoku result = null;
-                if ((result = Solve2(sudoku, depth)) != null)
+                if ((result = Solve3(sudoku, depth)) != null)
                     return result;
 
                 return null; // not solvable
@@ -126,7 +130,7 @@ namespace SudokuSolver
             return didFindOne ? SolveTryState.FoundAtLeastOne : SolveTryState.NoNewFindings;
         }
 
-        private static Sudoku Solve2(Sudoku sudoku, int depth)
+        private static Sudoku Solve3(Sudoku sudoku, int depth)
         {
             List<Task<Sudoku>> tasks = new List<Task<Sudoku>>();
             var tilesToCheck = sudoku.UnsolvedTiles.ToArray();

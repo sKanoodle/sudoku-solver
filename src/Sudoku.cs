@@ -89,15 +89,30 @@ namespace SudokuSolver
             return row * 3 + col;
         }
 
+        public bool Solve2()
+        {
+            bool foundOne = false;
+            for (int i = 0; i < 9; i++)
+            {
+                if (EliminatePossibleValues(GetRow(i)))
+                    foundOne = true;
+                if (EliminatePossibleValues(GetCol(i)))
+                    foundOne = true;
+                if (EliminatePossibleValues(GetNinth(i)))
+                    foundOne = true;
+            }
+            return foundOne;
+        }
+
         /// <summary>
         /// looks if 2 tiles have the same 2 possible values, then all other tiles in that row/column/ninth cant have those 2 values and they can be eliminated as possibility.
         /// </summary>
-        private void EliminatePossibleValues(IEnumerable<SudokuTile> neighbours)
+        private bool EliminatePossibleValues(IEnumerable<SudokuTile> neighbours)
         {
             var tiles = neighbours.ToList();
-            List<int> unsolved = tiles.Where(t => !t.HasValue).Select((t, i) => i).ToList();
+            List<int> unsolved = tiles.Select((tile, index) => (tile, index)).Where(t => !t.tile.HasValue).Select(t => t.index).ToList();
             if (unsolved.Count < 3)
-                return;
+                return false;
             List<int> tilesWith2Possibles = unsolved.Where(i => tiles[i].PossibleValues.Count == 2).ToList();
             int index1 = 0, index2 = 0;
             bool found2TIles = false;
@@ -110,11 +125,17 @@ namespace SudokuSolver
                         found2TIles = true;
                     }
             if (!found2TIles)
-                return;
+                return false;
 
             unsolved = unsolved.Where(i => i != index1 && i != index2).ToList();
+            bool foundOne = false;
             foreach (int index in unsolved)
+            {
                 tiles[index] = tiles[index].WithRemovedPossibleValues(tiles[index1].PossibleValues);
+                if (tiles[index].HasValue)
+                    foundOne = true;
+            }
+            return foundOne;
         }
 
         public void Draw()
