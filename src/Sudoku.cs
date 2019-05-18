@@ -30,6 +30,12 @@ namespace SudokuSolver
                 }
             }
 
+            foreach (var index in UnsolvedTiles.ToArray())
+            {
+                Tiles[index].SetInitialPossibleValues(this);
+                if (Tiles[index].HasValue)
+                    UnsolvedTiles.Remove(index);
+            }
         }
 
         public IEnumerable<SudokuTile> GetRow(int row)
@@ -83,6 +89,34 @@ namespace SudokuSolver
             return row * 3 + col;
         }
 
+        /// <summary>
+        /// looks if 2 tiles have the same 2 possible values, then all other tiles in that row/column/ninth cant have those 2 values and they can be eliminated as possibility.
+        /// </summary>
+        private void EliminatePossibleValues(IEnumerable<SudokuTile> neighbours)
+        {
+            var tiles = neighbours.ToList();
+            List<int> unsolved = tiles.Where(t => !t.HasValue).Select((t, i) => i).ToList();
+            if (unsolved.Count < 3)
+                return;
+            List<int> tilesWith2Possibles = unsolved.Where(i => tiles[i].PossibleValues.Count == 2).ToList();
+            int index1 = 0, index2 = 0;
+            bool found2TIles = false;
+            foreach (int i1 in tilesWith2Possibles)
+                foreach (int i2 in tilesWith2Possibles.Where(i => i != i1))
+                    if (tiles[i1].PossibleValues.SetEquals(tiles[i2].PossibleValues))
+                    {
+                        index1 = i1;
+                        index2 = i2;
+                        found2TIles = true;
+                    }
+            if (!found2TIles)
+                return;
+
+            unsolved = unsolved.Where(i => i != index1 && i != index2).ToList();
+            foreach (int index in unsolved)
+                tiles[index] = tiles[index].WithRemovedPossibleValues(tiles[index1].PossibleValues);
+        }
+
         public void Draw()
         {
             Console.SetCursorPosition(0, 0);
@@ -131,6 +165,7 @@ namespace SudokuSolver
 
         public bool IsGiven { get; } = false;
         public int Value { get; private set; }
+        public HashSet<int> PossibleValues { get; private set; }
 
         public bool HasValue => IsGiven || Value != 0;
 
@@ -158,7 +193,23 @@ namespace SudokuSolver
 
         private static readonly int[] AllValues = Enumerable.Range(1, 9).ToArray();
 
-        public IEnumerable<int> CalculatePossibleValues(Sudoku sudoku)
+        public void SetInitialPossibleValues(Sudoku sudoku)
+        {
+            var values = GetPossibleValues(sudoku).ToHashSet();
+            if (values.Count == 1)
+                Value = values.First();
+            PossibleValues = values;
+        }
+
+        public SudokuTile WithUpdatedPossibleValues(Sudoku sudoku)
+        {
+            var toRemove = PossibleValues.Except(GetPossibleValues(sudoku)).ToArray();
+            if (toRemove.Length < 1)
+                return this;
+            return WithRemovedPossibleValues(toRemove);
+        }
+
+        private IEnumerable<int> GetPossibleValues(Sudoku sudoku)
         {
             if (HasValue) throw new Exception("already has value");
 
@@ -169,6 +220,21 @@ namespace SudokuSolver
                 .Select(t => t.Value);
 
             return AllValues.Except(takenValues);
+        }
+
+        public SudokuTile WithRemovedPossibleValue(int value) => WithRemovedPossibleValues(new[] { value });
+
+        public SudokuTile WithRemovedPossibleValues(IEnumerable<int> values)
+        {
+            if (PossibleValues.Intersect(values).Count() == 0) // values are not in PossibleValues
+                return this;
+            SudokuTile result = new SudokuTile(Row, Col, Ninth);
+            result.PossibleValues = PossibleValues.Except(values).ToHashSet();
+            if (result.PossibleValues.Count < 1)
+                throw new Exception("impossible situation encountered, there is no possible value here");
+            if (result.PossibleValues.Count < 2)
+                result.Value = result.PossibleValues.First();
+            return result;
         }
     }
 }

@@ -55,8 +55,8 @@ namespace SudokuSolver
             });
 
             //SolveWithMetrics(easy);
-            //SolveWithMetrics(hard);
-            SolveWithMetrics(evil);
+            SolveWithMetrics(hard);
+            //SolveWithMetrics(evil);
 
             Console.ReadKey();
         }
@@ -105,15 +105,21 @@ namespace SudokuSolver
         {
             bool didFindOne = false;
             var tilesToCheck = sudoku.UnsolvedTiles.ToArray();
-            foreach (int tile in tilesToCheck)
+            foreach (int tileIndex in tilesToCheck)
             {
-                var possibleValues = sudoku.Tiles[tile].CalculatePossibleValues(sudoku).ToArray();
-                if (possibleValues.Length < 1)
-                    return SolveTryState.ImpossibleSolution;
-                if (possibleValues.Length < 2)
+                try
                 {
-                    sudoku.Tiles[tile] = sudoku.Tiles[tile].WithValue(possibleValues[0]);
-                    sudoku.UnsolvedTiles.Remove(tile);
+                    sudoku.Tiles[tileIndex] = sudoku.Tiles[tileIndex].WithUpdatedPossibleValues(sudoku);
+                }
+                catch
+                {
+                    return SolveTryState.ImpossibleSolution;
+                }
+                var tile = sudoku.Tiles[tileIndex];
+
+                if (tile.HasValue)
+                {
+                    sudoku.UnsolvedTiles.Remove(tileIndex);
                     didFindOne = true;
                 }
             }
@@ -124,15 +130,14 @@ namespace SudokuSolver
         {
             List<Task<Sudoku>> tasks = new List<Task<Sudoku>>();
             var tilesToCheck = sudoku.UnsolvedTiles.ToArray();
-            foreach (int tile in tilesToCheck)
+            foreach (int tileIndex in tilesToCheck)
             {
-                var possibleValues = sudoku.Tiles[tile].CalculatePossibleValues(sudoku).ToArray();
-                foreach (int value in possibleValues)
+                foreach (int value in sudoku.Tiles[tileIndex].PossibleValues)
                 {
                     var sudoku2 = sudoku.Clone();
 
-                    sudoku2.Tiles[tile] = sudoku2.Tiles[tile].WithValue(value);
-                    sudoku2.UnsolvedTiles.Remove(tile);
+                    sudoku2.Tiles[tileIndex] = sudoku2.Tiles[tileIndex].WithValue(value);
+                    sudoku2.UnsolvedTiles.Remove(tileIndex);
 
                     if (depth == 0)
                         tasks.Add(Task.Run(() => Solve(sudoku2, depth + 1)));
